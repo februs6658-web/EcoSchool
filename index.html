@@ -1,0 +1,536 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EcoSchool - Sekolah Bersih</title>
+<style>
+:root {
+  --bg:#f3f7f4; --card:#fff; --ink:#20372b;
+  --muted:#6b7d70; --green:#08764e;
+  --pale:#dff4e7; --line:#e1e9e2;
+}
+body.dark {
+  --bg:#14231b; --card:#203229; --ink:#eef8f0;
+  --muted:#b3c4b7; --pale:#294536; --line:#3b5041;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:Arial,sans-serif; line-height:1.5;
+}
+header {
+  background:linear-gradient(120deg,#075c3d,#159463);
+  color:white; padding:24px 5%;
+  display:flex; justify-content:space-between;
+  align-items:center; flex-wrap:wrap; gap:12px;
+}
+h1 { margin:0; }
+header p { margin:4px 0; }
+main { max-width:1100px; margin:auto; padding:20px 14px; }
+button,input,select,textarea { font:inherit; padding:11px; border-radius:9px; }
+button { background:var(--green); color:white; border:0; cursor:pointer; }
+input,select,textarea {
+  width:100%; border:1px solid var(--line);
+  background:var(--card); color:var(--ink);
+}
+nav { display:flex; gap:8px; overflow-x:auto; margin-bottom:20px; }
+nav button { white-space:nowrap; }
+nav .active { background:var(--green); color:white; }
+nav button:not(.active) {
+  background:var(--card); color:var(--ink);
+  border:1px solid var(--line);
+}
+.page { display:none; }
+.page.active { display:block; }
+.grid {
+  display:grid; grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px; margin:20px 0;
+}
+.card,.panel {
+  background:var(--card); border:1px solid var(--line);
+  border-radius:14px; padding:17px; margin-bottom:14px;
+}
+.number { font-size:27px; font-weight:bold; margin-top:8px; }
+.muted { color:var(--muted); font-size:13px; }
+.layout { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+form { display:grid; gap:12px; }
+label { display:grid; gap:6px; font-size:13px; font-weight:bold; }
+.fields { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.issue { border:1px solid var(--line); padding:15px; border-radius:12px; margin:12px 0; }
+.issuehead { display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; }
+.pill { background:var(--pale); color:var(--green); padding:5px 9px; border-radius:20px; font-size:12px; }
+.actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.actions button { font-size:13px; }
+.secondary { background:var(--card); color:var(--ink); border:1px solid var(--line); }
+.danger { background:#b93838; }
+.task { display:flex; gap:12px; padding:12px; border:1px solid var(--line); border-radius:10px; margin:10px 0; }
+.task input { width:19px; }
+.task label { flex:1; }
+.progress { height:9px; background:var(--line); border-radius:20px; overflow:hidden; margin:12px 0; }
+.progress div { height:100%; background:#28a66b; width:0; }
+.barrow { display:grid; grid-template-columns:120px 1fr 25px; gap:8px; align-items:center; margin:14px 0; font-size:13px; }
+.bar { height:10px; background:var(--line); border-radius:10px; overflow:hidden; }
+.bar span { display:block; height:100%; background:#28a66b; }
+.empty { text-align:center; padding:22px; color:var(--muted); }
+footer { text-align:center; padding:24px; color:var(--muted); font-size:12px; }
+@media(max-width:700px) {
+  .grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .layout,.fields { grid-template-columns:1fr; }
+  .number { font-size:22px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>🏫 EcoSchool</h1>
+    <p>Sekolah Bersih, Belajar Nyaman</p>
+  </div>
+  <button id="theme" class="secondary">🌙 Mode gelap</button>
+</header>
+
+<main>
+<nav id="nav">
+  <button class="active" data-page="home">🏠 Dashboard</button>
+  <button data-page="report">📝 Lapor Masalah</button>
+  <button data-page="issues">📋 Daftar Laporan</button>
+  <button data-page="challenge">🏆 Tantangan</button>
+  <button data-page="stats">📊 Statistik</button>
+</nav>
+
+<section class="page active" id="home">
+  <h2>Dashboard Sekolah</h2>
+  <p class="muted">Bersama menciptakan sekolah yang bersih dan nyaman.</p>
+  <div class="grid">
+    <div class="card">Total Laporan<div class="number" id="total">0</div></div>
+    <div class="card">Menunggu<div class="number" id="pending">0</div></div>
+    <div class="card">Ditangani<div class="number" id="working">0</div></div>
+    <div class="card">Selesai<div class="number" id="done">0</div></div>
+  </div>
+  <div class="layout">
+    <div class="panel">
+      <h3>📢 Temukan Masalah?</h3>
+      <p class="muted">Laporkan sampah, toilet kotor, keran bocor, lampu menyala, atau masalah fasilitas sekolah.</p>
+      <button onclick="go('report')">Buat Laporan</button>
+    </div>
+    <div class="panel">
+      <h3>🌱 Aksi Hari Ini</h3>
+      <p id="homeChallenge" class="muted"></p>
+      <div class="progress"><div id="homeProgress"></div></div>
+      <button onclick="go('challenge')">Lihat Tantangan</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>Laporan Terbaru</h3>
+    <div id="recent"></div>
+  </div>
+  <p class="muted">Catatan: data disimpan pada browser perangkat ini.</p>
+</section>
+
+<section class="page" id="report">
+  <div class="panel">
+    <h2>📝 Laporkan Masalah Sekolah</h2>
+    <p class="muted">Isi informasi masalah dengan jelas.</p>
+    <form id="reportForm">
+      <label>Judul Masalah
+        <input id="title" maxlength="100" placeholder="Contoh: Sampah kantin menumpuk" required>
+      </label>
+      <div class="fields">
+        <label>Kategori
+          <select id="category">
+            <option>Sampah sekolah</option>
+            <option>Kebersihan kelas</option>
+            <option>Toilet dan sanitasi</option>
+            <option>Pemborosan listrik</option>
+            <option>Pemborosan air</option>
+            <option>Penggunaan kertas</option>
+            <option>Kebersihan kantin</option>
+            <option>Fasilitas rusak</option>
+            <option>Lainnya</option>
+          </select>
+        </label>
+        <label>Lokasi
+          <select id="location">
+            <option>Ruang kelas</option>
+            <option>Kantin</option>
+            <option>Toilet</option>
+            <option>Koridor</option>
+            <option>Perpustakaan</option>
+            <option>Halaman sekolah</option>
+            <option>Ruang guru</option>
+            <option>Laboratorium</option>
+            <option>Lainnya</option>
+          </select>
+        </label>
+      </div>
+      <div class="fields">
+        <label>Prioritas
+          <select id="priority">
+            <option>Rendah</option>
+            <option>Sedang</option>
+            <option>Tinggi</option>
+          </select>
+        </label>
+        <label>Nama/Inisial (Opsional)
+          <input id="reporter" maxlength="50" placeholder="Boleh dikosongkan">
+        </label>
+      </div>
+      <label>Deskripsi
+        <textarea id="description" maxlength="1000" placeholder="Jelaskan masalah dan dampaknya..." required></textarea>
+      </label>
+      <button type="submit">Kirim Laporan</button>
+    </form>
+  </div>
+</section>
+
+<section class="page" id="issues">
+  <h2>📋 Daftar Laporan</h2>
+  <p class="muted">Cari laporan dan ubah status penanganannya.</p>
+  <div class="fields">
+    <input id="search" placeholder="Cari laporan...">
+    <select id="filter">
+      <option value="">Semua Status</option>
+      <option>Menunggu</option>
+      <option>Ditangani</option>
+      <option>Selesai</option>
+    </select>
+  </div>
+  <div id="list"></div>
+</section>
+
+<section class="page" id="challenge">
+  <div class="panel">
+    <h2>🏆 Tantangan Peduli Sekolah</h2>
+    <p class="muted">Setiap aksi bernilai 10 poin per hari.</p>
+    <div id="tasks"></div>
+    <div class="progress"><div id="taskProgress"></div></div>
+    <p id="taskSummary" class="muted"></p>
+    <h3>Poin Hari Ini: <span id="points">0</span></h3>
+    <button id="resetTasks" class="secondary">Reset Tantangan</button>
+  </div>
+</section>
+
+<section class="page" id="stats">
+  <h2>📊 Statistik Sekolah</h2>
+  <div class="grid">
+    <div class="card">Prioritas Tinggi<div class="number" id="high">0</div></div>
+    <div class="card">Kategori<div class="number" id="categories">0</div></div>
+    <div class="card">Selesai<div class="number" id="rate">0%</div></div>
+    <div class="card">Poin<div class="number" id="statPoints">0</div></div>
+  </div>
+  <div class="panel">
+    <h3>Laporan per Kategori</h3>
+    <div id="bars"></div>
+    <button id="csv">⬇ Unduh CSV</button>
+  </div>
+  <div class="panel">
+    <h3>💾 Cadangan Data</h3>
+    <div class="actions">
+      <button id="backup">Unduh JSON</button>
+      <button id="restoreBtn" class="secondary">Pulihkan JSON</button>
+      <input id="restore" type="file" accept=".json,application/json" hidden>
+    </div>
+    <div class="actions">
+      <button id="resetAll" class="danger">Hapus Semua Laporan</button>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>EcoSchool © 2026 · Mulai dari sekolah kita sendiri 🏫</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+const KEY = "ecoschool_v1";
+const taskNames = [
+  "Buang sampah pada tempatnya",
+  "Matikan lampu saat tidak digunakan",
+  "Gunakan kedua sisi kertas",
+  "Jaga kebersihan meja dan kelas",
+  "Pastikan keran tertutup"
+];
+const today = () => new Date().toISOString().slice(0,10);
+let db = {reports:[], tasks:{}, taskDay:today()};
+
+function save() {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(db));
+    return true;
+  } catch(e) {
+    alert("Data gagal disimpan. Coba unduh cadangan.");
+    return false;
+  }
+}
+function load() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY) || "null");
+    if(saved && Array.isArray(saved.reports) && saved.tasks)
+      db = saved;
+  } catch(e) {}
+  if(db.taskDay !== today()) {
+    db.tasks = {};
+    db.taskDay = today();
+    save();
+  }
+}
+function el(tag,text,cls) {
+  const n = document.createElement(tag);
+  if(text !== undefined) n.textContent = text;
+  if(cls) n.className = cls;
+  return n;
+}
+function go(id) {
+  document.querySelectorAll(".page").forEach(p =>
+    p.classList.toggle("active", p.id === id)
+  );
+  document.querySelectorAll("#nav button").forEach(b =>
+    b.classList.toggle("active", b.dataset.page === id)
+  );
+  if(id === "issues") renderList();
+  if(id === "stats") renderStats();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+$("nav").addEventListener("click", e => {
+  const b = e.target.closest("button[data-page]");
+  if(b) go(b.dataset.page);
+});
+
+function renderDashboard() {
+  const r = db.reports;
+  $("total").textContent = r.length;
+  $("pending").textContent = r.filter(x=>x.status==="Menunggu").length;
+  $("working").textContent = r.filter(x=>x.status==="Ditangani").length;
+  $("done").textContent = r.filter(x=>x.status==="Selesai").length;
+
+  const recent = $("recent");
+  recent.replaceChildren();
+  if(!r.length) recent.append(el("div","Belum ada laporan.","empty"));
+  r.slice().reverse().slice(0,4).forEach(x => {
+    recent.append(el("p",x.title+" · "+x.status));
+  });
+
+  const n = Object.values(db.tasks).filter(Boolean).length;
+  $("homeProgress").style.width = (n/taskNames.length*100)+"%";
+  $("homeChallenge").textContent =
+    n+" dari "+taskNames.length+" tantangan selesai.";
+}
+
+$("reportForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const title = $("title").value.trim();
+  const description = $("description").value.trim();
+  if(!title || !description) return alert("Lengkapi formulir.");
+
+  const report = {
+    id: Date.now().toString(36)+Math.random().toString(36).slice(2,7),
+    title, description,
+    category:$("category").value,
+    location:$("location").value,
+    priority:$("priority").value,
+    reporter:$("reporter").value.trim() || "Tidak dicantumkan",
+    status:"Menunggu",
+    date:new Date().toISOString()
+  };
+  db.reports.push(report);
+  if(!save()) {
+    db.reports.pop();
+    return;
+  }
+  e.target.reset();
+  renderAll();
+  go("issues");
+  alert("Laporan berhasil disimpan!");
+});
+
+function renderList() {
+  const root = $("list");
+  root.replaceChildren();
+  const q = $("search").value.toLowerCase().trim();
+  const f = $("filter").value;
+  const reports = db.reports.slice().reverse().filter(r =>
+    (r.title+" "+r.location+" "+r.category+" "+r.description)
+      .toLowerCase().includes(q) && (!f || r.status===f)
+  );
+  if(!reports.length) {
+    root.append(el("div","Tidak ada laporan yang cocok.","empty"));
+    return;
+  }
+  reports.forEach(r => {
+    const box = el("article",undefined,"issue");
+    const head = el("div",undefined,"issuehead");
+    head.append(el("strong",r.title),el("span",r.status,"pill"));
+    box.append(head);
+    box.append(el("p",r.category+" · "+r.location+" · Prioritas "+r.priority,"muted"));
+    box.append(el("p",r.description));
+    box.append(el("p","Pelapor: "+r.reporter+" · "+new Date(r.date).toLocaleString("id-ID"),"muted"));
+
+    const actions = el("div",undefined,"actions");
+    const select = el("select",undefined,"status");
+    select.setAttribute("aria-label","Status laporan");
+    ["Menunggu","Ditangani","Selesai"].forEach(s => {
+      const o = el("option",s);
+      o.value = s;
+      o.selected = s === r.status;
+      select.append(o);
+    });
+    select.addEventListener("change",() => {
+      const old = r.status;
+      r.status = select.value;
+      if(save()) renderAll();
+      else r.status = old;
+    });
+    const del = el("button","Hapus","danger");
+    del.addEventListener("click",() => {
+      if(!confirm("Hapus laporan ini?")) return;
+      const old = db.reports;
+      db.reports = old.filter(x=>x.id!==r.id);
+      if(save()) renderAll();
+      else db.reports = old;
+    });
+    actions.append(select,del);
+    box.append(actions);
+    root.append(box);
+  });
+}
+$("search").addEventListener("input",renderList);
+$("filter").addEventListener("change",renderList);
+
+function renderTasks() {
+  const root = $("tasks");
+  root.replaceChildren();
+  taskNames.forEach((name,i) => {
+    const row = el("div",undefined,"task");
+    const input = el("input");
+    input.type = "checkbox";
+    input.checked = !!db.tasks[i];
+    input.id = "task"+i;
+    input.addEventListener("change",() => {
+      const old = db.tasks[i];
+      db.tasks[i] = input.checked;
+      if(save()) renderAll();
+      else db.tasks[i] = old;
+    });
+    const label = el("label",name);
+    label.htmlFor = input.id;
+    row.append(input,label);
+    root.append(row);
+  });
+  const n = Object.values(db.tasks).filter(Boolean).length;
+  $("taskProgress").style.width = (n/taskNames.length*100)+"%";
+  $("taskSummary").textContent = n+" dari "+taskNames.length+" aksi selesai.";
+  $("points").textContent = n*10;
+}
+$("resetTasks").addEventListener("click",() => {
+  if(!confirm("Reset tantangan hari ini?")) return;
+  const old = db.tasks;
+  db.tasks = {};
+  if(save()) renderAll();
+  else db.tasks = old;
+});
+
+function renderStats() {
+  const r = db.reports;
+  const done = r.filter(x=>x.status==="Selesai").length;
+  $("high").textContent = r.filter(x=>x.priority==="Tinggi").length;
+  $("categories").textContent = new Set(r.map(x=>x.category)).size;
+  $("rate").textContent = (r.length?Math.round(done/r.length*100):0)+"%";
+  $("statPoints").textContent = Object.values(db.tasks).filter(Boolean).length*10;
+
+  const counts = {};
+  r.forEach(x=>counts[x.category]=(counts[x.category]||0)+1);
+  const root = $("bars");
+  root.replaceChildren();
+  const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  if(!entries.length) {
+    root.append(el("div","Belum ada data statistik.","empty"));
+    return;
+  }
+  const max = Math.max(...entries.map(x=>x[1]));
+  entries.forEach(([name,count]) => {
+    const row = el("div",undefined,"barrow");
+    const bar = el("div",undefined,"bar");
+    const fill = el("span");
+    fill.style.width = (count/max*100)+"%";
+    bar.append(fill);
+    row.append(el("span",name),bar,el("span",String(count)));
+    root.append(row);
+  });
+}
+
+function download(filename,content,type) {
+  const url = URL.createObjectURL(new Blob([content],{type}));
+  const a = el("a");
+  a.href = url;
+  a.download = filename;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+$("csv").addEventListener("click",() => {
+  const rows = [
+    ["Tanggal","Judul","Kategori","Lokasi","Prioritas","Status","Pelapor","Deskripsi"],
+    ...db.reports.map(r=>[
+      new Date(r.date).toLocaleString("id-ID"),r.title,r.category,
+      r.location,r.priority,r.status,r.reporter,r.description
+    ])
+  ];
+  const csv = rows.map(row=>row.map(v=>
+    '"'+String(v).replace(/"/g,'""')+'"'
+  ).join(",")).join("\r\n");
+  download("laporan-ec oschool.csv".replace(" ",""),"\uFEFF"+csv,"text/csv;charset=utf-8");
+});
+$("backup").addEventListener("click",() => {
+  download("cadangan-ec oschool.json".replace(" ",""),JSON.stringify(db,null,2),"application/json");
+});
+$("restoreBtn").addEventListener("click",()=>$("restore").click());
+$("restore").addEventListener("change",async e => {
+  const file = e.target.files[0];
+  if(!file) return;
+  try {
+    const x = JSON.parse(await file.text());
+    if(!x || !Array.isArray(x.reports) || !x.tasks || typeof x.tasks!=="object")
+      throw Error();
+    const valid = x.reports.every(r=>r && typeof r.title==="string" &&
+      typeof r.description==="string" &&
+      ["Menunggu","Ditangani","Selesai"].includes(r.status) &&
+      typeof r.date==="string");
+    if(!valid) throw Error();
+    if(!confirm("Pulihkan cadangan dan ganti data saat ini?")) return;
+    const old = db;
+    db = {reports:x.reports,tasks:x.tasks,taskDay:x.taskDay||today()};
+    if(save()) {
+      renderAll();
+      alert("Cadangan berhasil dipulihkan.");
+    } else db = old;
+  } catch(err) {
+    alert("File cadangan tidak valid.");
+  }
+  e.target.value = "";
+});
+$("resetAll").addEventListener("click",() => {
+  if(!confirm("Hapus semua laporan? Pastikan kamu punya cadangan.")) return;
+  const old = db.reports;
+  db.reports = [];
+  if(save()) renderAll();
+  else db.reports = old;
+});
+$("theme").addEventListener("click",() => {
+  document.body.classList.toggle("dark");
+  $("theme").textContent = document.body.classList.contains("dark")
+    ? "☀ Mode terang" : "🌙 Mode gelap";
+});
+
+function renderAll() {
+  renderDashboard();
+  renderList();
+  renderTasks();
+  renderStats();
+}
+load();
+renderAll();
+</script>
+</body>
+</html>
